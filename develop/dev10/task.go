@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -17,12 +18,13 @@ type Message struct {
 	err  error
 }
 
-func consoleInput(input chan Message) {
+func consoleInput(input chan Message, breakCH chan os.Signal) {
 	reader := bufio.NewReader(os.Stdin)
+
 	for {
-		request, err := reader.ReadString('\n')
-		if err != nil {
-			input <- Message{request, errors.New("Connect Problem: " + err.Error())}
+		request, _ := reader.ReadString('\n')
+		if request == "\x04\r\n" {
+			input <- Message{"", errors.New("program closed")}
 			continue
 		}
 		input <- Message{request, nil}
@@ -42,26 +44,34 @@ func connectMessage(output chan Message, con *net.TCPConn) {
 
 }
 
-func Telnet(input string) {
+func Telnet(input string) error {
 	comandArr := strings.Split(input, " ")
+	timerCheck := false
+	var timeout time.Duration
+	for _, v := range comandArr {
+		temp := strings.Split(v, "=")
+		if temp[0] == "--timeout" {
+			timerCheck = true
+			sec, _ := strconv.Atoi(string([]rune(temp[1])[0]))
+			timeout = time.Duration(sec * int(time.Second))
+		}
+	}
 	serverAddress := comandArr[len(comandArr)-2] + ":" + comandArr[len(comandArr)-1]
+	d := net.Dialer{}
 	fmt.Println("Create TCP Address")
-	tcpAdress, err := net.ResolveTCPAddr("tcp", serverAddress)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+	if timerCheck {
+		d = net.Dialer{Timeout: timeout}
 	}
 	fmt.Println("Try connect to " + serverAddress)
-	connect, err := net.DialTCP("tcp", nil, tcpAdress)
+	connect, err := d.Dial("tcp", serverAddress)
 	if err != nil {
 		fmt.Println("Connect FAIL;" + err.Error())
-		return
+		return err
 	}
-	defer connect.Close()
+	defer func() { fmt.Println("Connection close"); connect.Close() }()
 
 	fmt.Println("Connect success")
-	connect.SetKeepAlive(true)
-	connect.SetKeepAlivePeriod(5 * time.Second)
+	d.KeepAlive = 5 * time.Second
 	//reader := bufio.NewReader(os.Stdin)
 	inputCH := make(chan Message)
 	outputCH := make(chan Message)
@@ -69,18 +79,19 @@ func Telnet(input string) {
 	signal.Notify(breakCH, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM,
 		syscall.SIGINT)
 	workCheck := true
-	go consoleInput(inputCH)
-	go connectMessage(outputCH, connect)
+	go consoleInput(inputCH, breakCH)
+	go connectMessage(outputCH, connect.(*net.TCPConn))
 	for workCheck {
 		select {
 		case <-breakCH:
-			fmt.Println("Closed Connection")
+			fmt.Println("program closed")
 			workCheck = false
-			continue
+			return nil
 		case request := <-inputCH:
 			if request.err != nil {
 				fmt.Println(request.err)
 				workCheck = false
+				return request.err
 			}
 			fmt.Fprintf(connect, request.text)
 			continue
@@ -88,32 +99,14 @@ func Telnet(input string) {
 			if reply.err != nil {
 				fmt.Println(reply.err)
 				workCheck = false
-
+				return reply.err
 			}
 			fmt.Println(string(reply.text))
 			continue
 		}
 	}
+	return nil
 
-	/* request, err := reader.ReadString('\n')
-	if err != nil {
-		fmt.Println("Connect Problem: " + err.Error())
-		break
-	}
-	fmt.Fprintf(connect, request+"\n")
-	reply, err := bufio.NewReader(connect).ReadString('\n')
-	if err != nil {
-		fmt.Println("Connect Problem: " + err.Error())
-		break
-	}
-	fmt.Println(string(reply)) */
-
-	/* message, _ := bufio.NewReader(connect).ReadString('\n') */
-	/* reply := make([]byte, 1024)
-	fmt.Println("Wait message from server...")
-	connect.Read(reply)
-	fmt.Println("Message catched:")
-	fmt.Println(string(reply)) */
 }
 
 func main() {
