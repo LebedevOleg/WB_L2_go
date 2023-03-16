@@ -32,7 +32,7 @@ type EventJSON struct {
 }
 
 type IResponse interface {
-	SendResponse(http.ResponseWriter)
+	SendResponse(http.ResponseWriter, Logger)
 }
 
 type Error struct {
@@ -40,10 +40,11 @@ type Error struct {
 	errCode int
 }
 
-func (e *Error) SendResponse(w http.ResponseWriter) {
+func (e *Error) SendResponse(w http.ResponseWriter, log Logger) {
 	w.WriteHeader(e.errCode)
 	errText, _ := json.Marshal(e)
 	fmt.Fprint(w, string(errText))
+	go log.EndLog(string(errText))
 }
 
 func NewResponse(value, text string, code int) IResponse {
@@ -66,7 +67,7 @@ type TextResult struct {
 	resCode int
 }
 
-func (r *TextResult) SendResponse(w http.ResponseWriter) {
+func (r *TextResult) SendResponse(w http.ResponseWriter, log Logger) {
 	w.WriteHeader(r.resCode)
 	resText, _ := json.Marshal(r)
 	fmt.Fprint(w, string(resText))
@@ -77,7 +78,7 @@ type DataResult struct {
 	resCode int
 }
 
-func (r *DataResult) SendResponse(w http.ResponseWriter) {
+func (r *DataResult) SendResponse(w http.ResponseWriter, log Logger) {
 	w.WriteHeader(r.resCode)
 	resText, _ := json.Marshal(r)
 	fmt.Fprint(w, string(resText))
@@ -106,19 +107,19 @@ type Logger struct {
 	file     *os.File
 	fileName string
 	filePath string
+	textLog  string
 }
 
 func (l *Logger) StartLog(r *http.Request) {
+	bodyText, _ := ioutil.ReadAll(r.Body)
+	l.textLog = r.RemoteAddr + "::" + r.RequestURI + ";Body:" + string(bodyText)
+}
 
+func (l *Logger) EndLog(res string) {
 	if l.filePath == "" {
 		l.file, _ = os.OpenFile(l.fileName, os.O_WRONLY, 0666)
 	} else {
 		l.file, _ = os.OpenFile(l.filePath+l.fileName, os.O_WRONLY, 0666)
 	}
-	bodyText, _ := ioutil.ReadAll(r.Body)
-	logText := r.RemoteAddr + "::" + r.RequestURI + ";Body:" + string(bodyText)
-	l.file.WriteString(logText)
-	l.file.Close()
-}
 
-func (l *Logger) EndLog() {}
+}

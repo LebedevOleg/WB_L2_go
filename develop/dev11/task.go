@@ -11,7 +11,7 @@ import (
 )
 
 var DB map[int]SimpleDBTable
-var log Logger
+var log Logger //filename
 
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	reqJSON, err := ioutil.ReadAll(r.Body)
@@ -32,7 +32,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			for _, v := range elem.Events {
 				if v.Name == parsedEvent.Name {
 					reqError := NewResponse("err", "Event with this name alredy exist", 400)
-					reqError.SendResponse(w)
+					reqError.SendResponse(w, log)
 					return
 				}
 			}
