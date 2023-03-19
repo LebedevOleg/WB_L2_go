@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -44,7 +43,7 @@ func (e *Error) SendResponse(w http.ResponseWriter, log Logger) {
 	w.WriteHeader(e.errCode)
 	errText, _ := json.Marshal(e)
 	fmt.Fprint(w, string(errText))
-	go log.EndLog(string(errText))
+	log.EndLog(string(errText))
 }
 
 func NewResponse(value, text string, code int) IResponse {
@@ -71,6 +70,7 @@ func (r *TextResult) SendResponse(w http.ResponseWriter, log Logger) {
 	w.WriteHeader(r.resCode)
 	resText, _ := json.Marshal(r)
 	fmt.Fprint(w, string(resText))
+	log.EndLog(string(resText))
 }
 
 type DataResult struct {
@@ -82,6 +82,7 @@ func (r *DataResult) SendResponse(w http.ResponseWriter, log Logger) {
 	w.WriteHeader(r.resCode)
 	resText, _ := json.Marshal(r)
 	fmt.Fprint(w, string(resText))
+	log.EndLog(string(resText))
 }
 
 type DateStruct time.Time
@@ -106,20 +107,16 @@ func (d1 DateStruct) Equals(d2 DateStruct) {}
 type Logger struct {
 	file     *os.File
 	fileName string
-	filePath string
 	textLog  string
 }
 
-func (l *Logger) StartLog(r *http.Request) {
-	bodyText, _ := ioutil.ReadAll(r.Body)
-	l.textLog = r.RemoteAddr + "::" + r.RequestURI + ";Body:" + string(bodyText)
+func (l *Logger) StartLog(addres, URI, body string) {
+	l.textLog = time.Now().String() + "::" + addres + "::" + URI + ";Body:" + body + "\n"
 }
 
 func (l *Logger) EndLog(res string) {
-	if l.filePath == "" {
-		l.file, _ = os.OpenFile(l.fileName, os.O_WRONLY, 0666)
-	} else {
-		l.file, _ = os.OpenFile(l.filePath+l.fileName, os.O_WRONLY, 0666)
-	}
-
+	l.textLog += "\tresponce:" + res + "/"
+	l.file, _ = os.OpenFile(l.fileName, os.O_APPEND|os.O_WRONLY, 0600)
+	defer l.file.Close()
+	l.file.WriteString(l.textLog + "\n")
 }

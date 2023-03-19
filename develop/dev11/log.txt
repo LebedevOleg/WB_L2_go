@@ -1,0 +1,19 @@
+2023-03-19 23:55:36.7704529 +0300 MSK m=+3.647397701::127.0.0.1:3654::/event_for_day?date=2023-03-12;Body:
+	responce:{"error":"Day without events"}/
+2023-03-19 23:55:41.7974043 +0300 MSK m=+8.674349101::127.0.0.1:3654::/create_event;Body:{"date": "2023-03-12", "name":"test1", "desc":"descriptions" }
+	responce:{"result":"Create event correct"}/
+2023-03-19 23:55:46.4253802 +0300 MSK m=+13.302325001::127.0.0.1:3654::/event_for_day?date=2023-03-12;Body:
+	responce:{"result":[{"date":"2023-03-12","events":[{"Name":"test1","Description":"descriptions"}]}]}/
+2023-03-19 23:55:52.4764341 +0300 MSK m=+19.353378901::127.0.0.1:3654::/event_for_day?date=2023-03-13;Body:
+	responce:{"error":"Day without events"}/
+2023-03-19 23:55:56.5411908 +0300 MSK m=+23.418135601::127.0.0.1:3654::/event_for_week?date=2023-03-11;Body:
+	responce:{"result":[{"date":"2023-03-12","events":[{"Name":"test1","Description":"descriptions"}]}]}/
+2023-03-19 23:56:02.6410246 +0300 MSK m=+29.517969401::127.0.0.1:3654::/update_event;Body:{
+"previous":
+ {"date": "2023-03-12", "name":"test1"},
+"new":
+ {"date": "2023-03-13", "name":"UPtest", "desc":"UPdescriptions" } 
+}
+	responce:{"result":"Update event correct"}/
+2023-03-19 23:56:10.3609523 +0300 MSK m=+37.237897101::127.0.0.1:3654::/event_for_week?date=2023-03-11;Body:
+	responce:{"result":[{"date":"2023-03-13","events":[{"Name":"UPtest","Description":"UPdescriptions"}]}]}/
