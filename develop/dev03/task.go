@@ -36,10 +36,12 @@ func (ms *manSort) GetText() error {
 }
 func (ms *manSort) Sort() error {
 	if ms.skipRepeat {
+		textMap := make(map[string]struct{})
 		for i, v := range ms.sortedText {
-			if i+1 < len(ms.sortedText) && v == ms.sortedText[i+1] {
+			if _, ok := textMap[v]; ok {
 				ms.sortedText = append(ms.sortedText[:i], ms.sortedText[i+1:]...)
 			}
+			textMap[v] = struct{}{}
 		}
 	}
 	if ms.reverseSort {
@@ -80,7 +82,8 @@ func (ms *manSort) WriteToFile() error {
 	for _, v := range ms.sortedText {
 		sortedtext.WriteString(v + "\n")
 	}
-	err := ioutil.WriteFile("(sorted)"+ms.fileName, sortedtext.Bytes(), 0777)
+	err := ioutil.WriteFile("(sorted)"+ms.fileName,
+		[]byte(strings.Trim(sortedtext.String(), "\n")), 0777)
 	if err != nil {
 		return err
 	}
@@ -117,7 +120,7 @@ func Execute(commandLine string) (string, error) {
 	if err != nil {
 		return "Ошибка при записи", err
 	}
-	return "", nil
+	return "(sorted)" + mSort.fileName, nil
 }
 
 func main() {
