@@ -8,34 +8,18 @@ import (
 	"strings"
 )
 
-func Selector(command []string) (IOperation, error) {
-	pipe := Pipe{}
-	for i := len(command) - 1; i <= 0; i-- {
-		switch command[i] {
-		case "echo":
-			return &Echo{strings.Join(command[1:], " ")}, nil
-		case "pwd":
-			return &PWD{}, nil
-		case "cd":
-			return &CD{strings.Join(command[1:], " ")}, nil
-		case "kill":
-			return &Kill{processName: command[1]}, nil
-		case "ps":
-			return &PS{}, nil
-		case "\\quit":
-			return nil, errors.New("exit")
-		}
-	}
-
-	switch command[0] {
+func Selector(command string) (IOperation, error) {
+	command = strings.Trim(command, " ")
+	commandArr := strings.Split(command, " ")
+	switch commandArr[0] {
 	case "echo":
-		return &Echo{strings.Join(command[1:], " ")}, nil
+		return &Echo{text: strings.Join(commandArr[1:], " ")}, nil
 	case "pwd":
 		return &PWD{}, nil
 	case "cd":
-		return &CD{strings.Join(command[1:], " ")}, nil
+		return &CD{path: strings.Join(commandArr[1:], " ")}, nil
 	case "kill":
-		return &Kill{processName: command[1]}, nil
+		return &Kill{processName: commandArr[1]}, nil
 	case "ps":
 		return &PS{}, nil
 	case "\\quit":
@@ -47,16 +31,16 @@ func Selector(command []string) (IOperation, error) {
 
 func Command(comandLine string) {
 	comandLine = strings.Trim(comandLine, " ")
-	comandLineArr := strings.Split(comandLine, " ")
-	operation, err := Selector(comandLineArr)
-	if err != nil {
-		if err.Error() == "exit" {
-			os.Exit(0)
+	commandPipes := strings.Split(comandLine, "|")
+
+	for i := 0; i < len(commandPipes); i++ {
+		operation, err := Selector(commandPipes[i])
+		if err != nil {
+			fmt.Println(err)
+			return
 		}
-		fmt.Println(err)
-		return
+		operation.Operation()
 	}
-	operation.Operation()
 }
 
 func main() {

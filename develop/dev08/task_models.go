@@ -10,16 +10,28 @@ import (
 )
 
 type Pipe struct {
-	Next *IOperation
+	Next IOperation
+}
+
+func (p *Pipe) Execute() {
+	for p.Next != nil {
+		p.Next.Operation()
+		p.Next = p.Next.GetNext()
+	}
 }
 
 type IOperation interface {
 	Operation()
+	GetNext() IOperation
 }
 
 type Echo struct {
 	text string
-	Next *IOperation
+	Next IOperation
+}
+
+func (e *Echo) GetNext() IOperation {
+	return e.Next
 }
 
 func (e *Echo) Operation() {
@@ -27,7 +39,11 @@ func (e *Echo) Operation() {
 }
 
 type PWD struct {
-	Next *IOperation
+	Next IOperation
+}
+
+func (p *PWD) GetNext() IOperation {
+	return p.Next
 }
 
 func (pwd *PWD) Operation() {
@@ -40,7 +56,11 @@ func (pwd *PWD) Operation() {
 
 type CD struct {
 	path string
-	Next *IOperation
+	Next IOperation
+}
+
+func (c *CD) GetNext() IOperation {
+	return c.Next
 }
 
 func (cd *CD) Operation() {
@@ -50,7 +70,11 @@ func (cd *CD) Operation() {
 type Kill struct {
 	processName string
 	pID         uint32
-	Next        *IOperation
+	Next        IOperation
+}
+
+func (k *Kill) GetNext() IOperation {
+	return k.Next
 }
 
 func (k *Kill) Operation() {
@@ -87,7 +111,11 @@ func (k *Kill) processID() error {
 }
 
 type PS struct {
-	Next *IOperation
+	Next IOperation
+}
+
+func (p *PS) GetNext() IOperation {
+	return p.Next
 }
 
 func (ps *PS) Operation() {
