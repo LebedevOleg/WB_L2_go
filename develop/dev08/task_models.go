@@ -19,13 +19,16 @@ type IOperation interface {
 
 type Echo struct {
 	text string
+	Next *IOperation
 }
 
 func (e *Echo) Operation() {
 	fmt.Println(e.text)
 }
 
-type PWD struct{}
+type PWD struct {
+	Next *IOperation
+}
 
 func (pwd *PWD) Operation() {
 	path, err := os.Getwd()
@@ -37,6 +40,7 @@ func (pwd *PWD) Operation() {
 
 type CD struct {
 	path string
+	Next *IOperation
 }
 
 func (cd *CD) Operation() {
@@ -46,6 +50,7 @@ func (cd *CD) Operation() {
 type Kill struct {
 	processName string
 	pID         uint32
+	Next        *IOperation
 }
 
 func (k *Kill) Operation() {
@@ -81,7 +86,9 @@ func (k *Kill) processID() error {
 	}
 }
 
-type PS struct{}
+type PS struct {
+	Next *IOperation
+}
 
 func (ps *PS) Operation() {
 	var processes bytes.Buffer

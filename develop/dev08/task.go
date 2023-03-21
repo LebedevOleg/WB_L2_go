@@ -9,6 +9,24 @@ import (
 )
 
 func Selector(command []string) (IOperation, error) {
+	pipe := Pipe{}
+	for i := len(command) - 1; i <= 0; i-- {
+		switch command[i] {
+		case "echo":
+			return &Echo{strings.Join(command[1:], " ")}, nil
+		case "pwd":
+			return &PWD{}, nil
+		case "cd":
+			return &CD{strings.Join(command[1:], " ")}, nil
+		case "kill":
+			return &Kill{processName: command[1]}, nil
+		case "ps":
+			return &PS{}, nil
+		case "\\quit":
+			return nil, errors.New("exit")
+		}
+	}
+
 	switch command[0] {
 	case "echo":
 		return &Echo{strings.Join(command[1:], " ")}, nil
