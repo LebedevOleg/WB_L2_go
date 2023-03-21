@@ -32,7 +32,6 @@ func Selector(command string) (IOperation, error) {
 func Command(comandLine string) {
 	comandLine = strings.Trim(comandLine, " ")
 	commandPipes := strings.Split(comandLine, "|")
-
 	for i := 0; i < len(commandPipes); i++ {
 		operation, err := Selector(commandPipes[i])
 		if err != nil {
